@@ -12,6 +12,25 @@ package platform
 //	return r.authenticate
 //}
 
+// ValidateAuthFunc implements component.Authenticator
+func (p *Platform) ValidateAuthFunc() interface{} {
+	return p.ValidateAuth
+}
+
+// AuthFunc implements component.Authenticator
+func (p *Platform) AuthFunc() interface{} {
+	return p.Auth
+}
+
+func (p *Platform) Auth() error {
+	return nil
+}
+
+func (p *Platform) ValidateAuth() error {
+	return nil
+}
+
+
 // A ValidateAuthFunc does not have a strict signature, you can define the parameters
 // you need based on the Available parameters that the Waypoint SDK provides.
 // Waypoint will automatically inject parameters as specified
