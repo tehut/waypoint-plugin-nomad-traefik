@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/waypoint-plugin-sdk/component"
 	"github.com/hashicorp/waypoint-plugin-sdk/docs"
 	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
+	"github.com/hashicorp/waypoint/builtin/docker"
 )
 
 const (
@@ -129,7 +130,7 @@ func (p *Platform) deploy(
 	ctx context.Context,
 	log hclog.Logger,
 	src *component.Source,
-	// img *docker.Image,
+	img *docker.Image,
 	deployConfig *component.DeploymentConfig,
 	ui terminal.UI,
 ) (*Deployment, error) {
@@ -237,7 +238,7 @@ func (p *Platform) deploy(
 	job.SetMeta(metaNonce, time.Now().UTC().Format(time.RFC3339Nano))
 
 	config := map[string]interface{}{
-		"image": "test",
+		"image": img.Name(),
 		"ports": []string{"waypoint"},
 	}
 
