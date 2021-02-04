@@ -1,7 +1,7 @@
 
 syntax = "proto3";
 
-package platform;
+package builder;
 
 option go_package = "github.com/jeffwecan/waypoint-plugin-nomad-traefik/builder";
 

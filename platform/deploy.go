@@ -134,6 +134,7 @@ func (p *Platform) deploy(
 	deployConfig *component.DeploymentConfig,
 	ui terminal.UI,
 ) (*Deployment, error) {
+
 	// Create our deployment and set an initial ID
 	var result Deployment
 	id, err := component.Id()

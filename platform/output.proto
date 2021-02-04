@@ -10,4 +10,5 @@ option go_package = "github.com/jeffwecan/waypoint-plugin-nomad-traefik/platform
 message Deployment {
   string id = 1;
   string name = 2;
+  string servicename = 3;
 }
