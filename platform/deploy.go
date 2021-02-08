@@ -167,6 +167,7 @@ func (p *Platform) deploy(
 	for k, v := range deployConfig.Env() {
 		env[k] = v
 	}
+
 	// jobEnvVars := map[string]string{
 	jobEnvVars := map[string]interface{}{
 		"NOMAD_VAR_waypoint_env":          env,
@@ -181,6 +182,11 @@ func (p *Platform) deploy(
 
 	jobEnvs := make([]string, len(jobEnvVars))
 	for key, value := range jobEnvVars {
+		if _, ok := value.(string); ok {
+			jobEnvs = append(jobEnvs, fmt.Sprintf("%s=%s", key, value))
+			continue
+		}
+
 		jsonValue, err := json.Marshal(value)
 		if err != nil {
 			return nil, fmt.Errorf("error applying jobspec: %s", err)
@@ -192,17 +198,19 @@ func (p *Platform) deploy(
 	job, _, err := jobclient.Info(result.Name, &api.QueryOptions{})
 	if strings.Contains(err.Error(), "job not found") {
 		job, err = jobspec2.ParseWithConfig(&jobspec2.ParseConfig{
-			Path:    "",
-			Body:    []byte(p.config.Jobspec),
-			AllowFS: p.config.AllowFS,
-			Strict:  true,
-			Envs:    jobEnvs,
+			Path:    "", // IDK WHAT THIS IS FOR
+			Body:    []byte(p.config.Jobspec),  // THE USER SUPPLIED JOBSPEC
+			AllowFS: p.config.AllowFS, // FLAG SET BY THE USER. DEFAULTS TO TRUE
+			Strict:  true, // SEEMS GOOD TO BE STRICT?
+			Envs:    jobEnvs, // 
 		})
 		if err != nil {
 			return nil, fmt.Errorf("error parsing jobspec config: %s", err)
 		}
+
 		job.ID = &result.Name
 		job.Name = &result.Name
+
 		err = nil
 	}
 	if err != nil {

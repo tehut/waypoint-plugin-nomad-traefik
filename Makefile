@@ -14,10 +14,10 @@ protos:
 	@echo ""
 	@echo "Build Protos"
 
-	protoc -I . --go_out=plugins=grpc:. --go_opt=paths=source_relative ./builder/output.proto
-	protoc -I . --go_out=plugins=grpc:. --go_opt=paths=source_relative ./registry/output.proto
-	protoc -I . --go_out=plugins=grpc:. --go_opt=paths=source_relative ./platform/output.proto
-	protoc -I . --go_out=plugins=grpc:. --go_opt=paths=source_relative ./release/output.proto
+	# protoc -I . --go_out=plugins=grpc:. --go_opt=paths=source_relative ./builder/output.proto
+	# protoc -I . --go_out=plugins=grpc:. --go_opt=paths=source_relative ./registry/output.proto
+	# protoc -I . --go_out=plugins=grpc:. --go_opt=paths=source_relative ./platform/output.proto
+	# protoc -I . --go_out=plugins=grpc:. --go_opt=paths=source_relative ./release/output.proto
 
 # Builds the plugin on your local machine
 build:
@@ -27,7 +27,7 @@ build:
 	# Clear the output
 	rm -rf ./bin
 
-	GOOS=linux GOARCH=amd64 go build -o ./bin/linux_amd64/waypoint-plugin-${PLUGIN_NAME} ./main.go
+	# GOOS=linux GOARCH=amd64 go build -o ./bin/linux_amd64/waypoint-plugin-${PLUGIN_NAME} ./main.go
 	GOOS=darwin GOARCH=amd64 go build -o ./bin/darwin_amd64/waypoint-plugin-${PLUGIN_NAME} ./main.go
 	# GOOS=windows GOARCH=amd64 go build -o ./bin/windows_amd64/waypoint-plugin-${PLUGIN_NAME}.exe ./main.go
 	# GOOS=windows GOARCH=386 go build -o ./bin/windows_386/waypoint-plugin-${PLUGIN_NAME}.exe ./main.go
@@ -39,7 +39,7 @@ install:
 
 	# cp ./bin/${_ARCH}_amd64/waypoint-plugin-${PLUGIN_NAME}* ${HOME}/.config/waypoint/plugins/
 	# OSX version instead =>
-	cp -v ./bin/linux_amd64/waypoint-plugin-${PLUGIN_NAME}* /Users/jeffwecan/workspace/es-hashistack/circleci_runners
+	# cp -v ./bin/linux_amd64/waypoint-plugin-${PLUGIN_NAME}* /Users/jeffwecan/workspace/es-hashistack/circleci_runners
 	cp -v ./bin/${_ARCH}_amd64/waypoint-plugin-${PLUGIN_NAME}* ${HOME}/Library/Preferences/waypoint/plugins
 
 # Zip the built plugin binaries

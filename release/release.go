@@ -3,14 +3,16 @@ package release
 import (
 	"context"
 	"fmt"
-
+	"regexp"
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
 	"github.com/jeffwecan/waypoint-plugin-nomad-traefik/platform"
+
+	"github.com/hashicorp/nomad/api"
 )
 
 type ReleaseConfig struct {
-	Active bool "hcl:directory,optional"
+	Domain string `hcl:"domain"`
 }
 
 type ReleaseManager struct {
@@ -72,7 +74,63 @@ func (rm *ReleaseManager) release(ctx context.Context, ui terminal.UI, target *p
 	u := ui.Status()
 	log.Debug("release thinger", target)
 	defer u.Close()
-	u.Update("Release application")
 
-	return &Release{}, fmt.Errorf("nah")
+	log.Debug("Attempting to find job %s...", target.Name)
+	client, err := api.NewClient(api.DefaultConfig())
+	jobclient := client.Jobs()
+	// find existing job / deployment
+	job, _, err := jobclient.Info(target.Name, &api.QueryOptions{})
+	if err != nil {
+		// if not existing one bomb out
+		return nil, err
+	}
+	// our magic tag thing?
+	re := regexp.MustCompile("waypoint.release-router=(.*)")
+
+	for _, tg := range job.TaskGroups {
+		// log.Debug("%s: tg.services::", tg.Name)
+		for _, svc := range tg.Services {
+			log.Debug("task group service tags", tg.Name, svc.Name, svc.Tags)
+			routerName := ""
+			for _, tag := range svc.Tags {
+				// See if this service has our magic tag thing
+				match := re.FindStringSubmatch(tag)
+				if len(match) >= 1 {
+					routerName = match[1]
+				}
+			}
+			if routerName != "" {
+				svc.Tags = append(svc.Tags, fmt.Sprintf("traefik.http.routers.%s.rule=Host(`%s`)", routerName, rm.config.Domain))
+				log.Debug("updated task group service tags", tg.Name, svc.Name, svc.Tags)
+			}
+		}
+		// for _, task := range tg.Tasks {
+		// 	// log.Debug("%s: task.services::", task.Name)
+		// 	for _, svc := range task.Services {
+		// 		log.Debug("task service tags", task.Name, svc.Name, svc.Tags)
+		// 	}
+		// }
+	}
+	log.Debug("Job found!: %s", job.ID)
+
+	// Register job
+	u.Update("Updating job...")
+	regResult, _, err := jobclient.Register(job, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	evalID := regResult.EvalID
+
+	// Wait on the allocation
+	u.Update(fmt.Sprintf("Monitoring evaluation %q", evalID))
+
+	if err := newMonitor(u, client).monitor(evalID); err != nil {
+		return nil, err
+	}
+	u.Step(terminal.StatusOK, "Deployment successfully released!")
+
+	return &Release{
+		Url: "https://" + rm.config.Domain,
+	}, fmt.Errorf("nah")
 }
