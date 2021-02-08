@@ -42,7 +42,7 @@ require (
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/hashicorp/hcl/v2 v2.7.1-0.20201023000745-3de61ecba298 // indirect
 	github.com/hashicorp/horizon v0.0.0-20201203173320-fcefbe49771c // indirect
-	github.com/hashicorp/nomad/api v0.0.0-20210129195815-82011c24ce6c
+	github.com/hashicorp/nomad/api v0.0.0-20210115191909-bcd4752fc902
 	github.com/hashicorp/vault/sdk v0.1.14-0.20201202172114-ee5ebeb30fef // indirect
 	github.com/hashicorp/waypoint v0.2.0
 	github.com/hashicorp/waypoint-hzn v0.0.0-20201008221232-97cd4d9120b9 // indirect
