@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jeffwecan/waypoint-plugin-nomad-traefik/registry"
+	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
+	"github.com/jeffwecan/waypoint-plugin-nomad-traefik/platform"
 )
 
 type ReleaseConfig struct {
@@ -67,10 +68,11 @@ func (rm *ReleaseManager) ReleaseFunc() interface{} {
 //
 // If an error is returned, Waypoint stops the execution flow and
 // returns an error to the user.
-func (rm *ReleaseManager) release(ctx context.Context, ui terminal.UI, artifact *registry.Artifact) (*Release, error) {
+func (rm *ReleaseManager) release(ctx context.Context, ui terminal.UI, target *platform.Deployment, log hclog.Logger) (*Release, error) {
 	u := ui.Status()
+	log.Debug("release thinger", target)
 	defer u.Close()
 	u.Update("Release application")
 
-	return &Release{}, nil
+	return &Release{}, fmt.Errorf("nah")
 }
