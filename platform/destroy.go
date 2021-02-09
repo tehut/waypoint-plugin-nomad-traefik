@@ -3,6 +3,8 @@ package platform
 import (
 	"context"
 
+	"github.com/hashicorp/go-hclog"
+	"github.com/hashicorp/nomad/api"
 	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
 )
 
@@ -38,6 +40,23 @@ func (p *Platform) DestroyFunc() interface{} {
 //
 // If an error is returned, Waypoint stops the execution flow and
 // returns an error to the user.
-func (p *Platform) destroy(ctx context.Context, ui terminal.UI, deployment *Deployment) error {
-	return nil
+func (p *Platform) destroy(
+	ctx context.Context,
+	log hclog.Logger,
+	deployment *Deployment,
+	ui terminal.UI,
+) error {
+
+	// We'll update the user in real time
+	st := ui.Status()
+	defer st.Close()
+
+	client, err := api.NewClient(api.DefaultConfig())
+	if err != nil {
+		return err
+	}
+
+	st.Update("Deleting job...")
+	_, _, err = client.Jobs().Deregister(deployment.Name, true, nil)
+	return err
 }

@@ -24,7 +24,7 @@ const (
 
 // Config is the configuration structure for the Platform.
 type Config struct {
-	Jobspec string `hcl:"jobspec"`
+	Jobspec string            `hcl:"jobspec"`
 	JobVars map[string]string `hcl:"job_vars,optional"`
 
 	// The Nomad region to deploy to, defaults to "global"
@@ -136,6 +136,7 @@ func (p *Platform) deploy(
 	if err != nil {
 		return nil, err
 	}
+
 	result.Id = id
 	result.Name = strings.ToLower(fmt.Sprintf("%s-%s", src.App, id))
 
@@ -171,13 +172,12 @@ func (p *Platform) deploy(
 	// jobEnvVars := map[string]string{
 	jobEnvVars := map[string]interface{}{
 		"NOMAD_VAR_waypoint_env":          env,
-		// "NOMAD_VAR_waypoint_env":          fmt.Sprintf("%s", envString),
 		"NOMAD_VAR_waypoint_image":        img.Name(),
 		"NOMAD_VAR_waypoint_job_name":     result.Name,
 		"NOMAD_VAR_waypoint_service_port": p.config.ServicePort,
 	}
 	for k, v := range p.config.JobVars {
-    jobEnvVars[k] = v
+		jobEnvVars[k] = v
 	}
 
 	jobEnvs := make([]string, len(jobEnvVars))
@@ -193,19 +193,19 @@ func (p *Platform) deploy(
 		}
 		jobEnvs = append(jobEnvs, fmt.Sprintf("%s=%s", key, jsonValue))
 	}
-	log.Debug("Job env vars string slice: ", jobEnvs)
+
 	// Determine if we have a job that we manage already
 	job, _, err := jobclient.Info(result.Name, &api.QueryOptions{})
-	if err != nil {
+	if c := strings.Contains(err.Error(), "job not found"); c == false && err != nil {
 		return nil, err
 	}
 	if strings.Contains(err.Error(), "job not found") {
 		job, err = jobspec2.ParseWithConfig(&jobspec2.ParseConfig{
-			Path:    "", // IDK WHAT THIS IS FOR
-			Body:    []byte(p.config.Jobspec),  // THE USER SUPPLIED JOBSPEC
-			AllowFS: p.config.AllowFS, // FLAG SET BY THE USER. DEFAULTS TO TRUE
-			Strict:  true, // SEEMS GOOD TO BE STRICT?
-			Envs:    jobEnvs, // 
+			Path:    "",                       // IDK WHAT THIS IS FOR
+			Body:    []byte(p.config.Jobspec), // THE USER SUPPLIED JOBSPEC
+			AllowFS: p.config.AllowFS,         // FLAG SET BY THE USER. DEFAULTS TO TRUE
+			Strict:  true,                     // SEEMS GOOD TO BE STRICT?
+			Envs:    jobEnvs,                  //
 		})
 		if err != nil {
 			return nil, fmt.Errorf("error parsing jobspec config: %s", err)
@@ -213,8 +213,6 @@ func (p *Platform) deploy(
 
 		job.ID = &result.Name
 		job.Name = &result.Name
-
-		// err = nil
 	}
 
 	// Set our ID on the meta.
@@ -238,7 +236,6 @@ func (p *Platform) deploy(
 		return nil, err
 	}
 	st.Step(terminal.StatusOK, "Deployment successfully rolled out!")
-
 	return &result, nil
 }
 
