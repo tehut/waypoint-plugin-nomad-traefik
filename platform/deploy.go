@@ -196,6 +196,9 @@ func (p *Platform) deploy(
 	log.Debug("Job env vars string slice: ", jobEnvs)
 	// Determine if we have a job that we manage already
 	job, _, err := jobclient.Info(result.Name, &api.QueryOptions{})
+	if err != nil {
+		return nil, err
+	}
 	if strings.Contains(err.Error(), "job not found") {
 		job, err = jobspec2.ParseWithConfig(&jobspec2.ParseConfig{
 			Path:    "", // IDK WHAT THIS IS FOR
@@ -211,10 +214,7 @@ func (p *Platform) deploy(
 		job.ID = &result.Name
 		job.Name = &result.Name
 
-		err = nil
-	}
-	if err != nil {
-		return nil, err
+		// err = nil
 	}
 
 	// Set our ID on the meta.
