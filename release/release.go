@@ -3,13 +3,17 @@ package release
 import (
 	"context"
 	"fmt"
-
-	"github.com/jeffwecan/waypoint-plugin-nomad-traefik/registry"
+	"regexp"
+	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
+	"github.com/jeffwecan/waypoint-plugin-nomad-traefik/platform"
+
+	"github.com/hashicorp/waypoint-plugin-sdk/component"
+	"github.com/hashicorp/nomad/api"
 )
 
 type ReleaseConfig struct {
-	Active bool "hcl:directory,optional"
+	Domain string `hcl:"domain"`
 }
 
 type ReleaseManager struct {
@@ -67,10 +71,73 @@ func (rm *ReleaseManager) ReleaseFunc() interface{} {
 //
 // If an error is returned, Waypoint stops the execution flow and
 // returns an error to the user.
-func (rm *ReleaseManager) release(ctx context.Context, ui terminal.UI, artifact *registry.Artifact) (*Release, error) {
+func (rm *ReleaseManager) release(ctx context.Context, ui terminal.UI, target *platform.Deployment, log hclog.Logger) (*Release, error) {
 	u := ui.Status()
+	log.Debug("release thinger", target)
 	defer u.Close()
-	u.Update("Release application")
 
-	return &Release{}, nil
+	log.Debug("Attempting to find job %s...", target.Name)
+	client, err := api.NewClient(api.DefaultConfig())
+	jobclient := client.Jobs()
+	// find existing job / deployment
+	job, _, err := jobclient.Info(target.Name, &api.QueryOptions{})
+	if err != nil {
+		// if not existing one bomb out
+		return nil, err
+	}
+	// our magic tag thing?
+	re := regexp.MustCompile("waypoint.release-router=(.*)")
+
+	for _, tg := range job.TaskGroups {
+		// log.Debug("%s: tg.services::", tg.Name)
+		for _, svc := range tg.Services {
+			log.Debug("task group service tags", tg.Name, svc.Name, svc.Tags)
+			routerName := ""
+			for _, tag := range svc.Tags {
+				// See if this service has our magic tag thing
+				match := re.FindStringSubmatch(tag)
+				if len(match) >= 1 {
+					routerName = match[1]
+				}
+			}
+			if routerName != "" {
+				svc.Tags = append(svc.Tags, fmt.Sprintf("traefik.http.routers.%s.rule=Host(`%s`)", routerName, rm.config.Domain))
+				log.Debug("updated task group service tags", tg.Name, svc.Name, svc.Tags)
+			}
+		}
+		// for _, task := range tg.Tasks {
+		// 	// log.Debug("%s: task.services::", task.Name)
+		// 	for _, svc := range task.Services {
+		// 		log.Debug("task service tags", task.Name, svc.Name, svc.Tags)
+		// 	}
+		// }
+	}
+	log.Debug("Job found!: %s", job.ID)
+
+	// Register job
+	u.Update("Updating job...")
+	regResult, _, err := jobclient.Register(job, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	evalID := regResult.EvalID
+	log.Debug("released job evalID", evalID)
+
+	u.Step(terminal.StatusOK, "Deployment successfully releaseddd!")
+
+	// Create our deployment and set an initial ID
+	var result Release
+	result.Id = target.Id
+	result.Name = target.Name
+	result.Url = fmt.Sprintf("https://%s", rm.config.Domain)
+	return &result, nil
 }
+
+// URL is a URL.
+func (r *Release) URL() string { return r.Url }
+
+var (
+	_ component.ReleaseManager = (*ReleaseManager)(nil)
+	_ component.Configurable   = (*ReleaseManager)(nil)
+)

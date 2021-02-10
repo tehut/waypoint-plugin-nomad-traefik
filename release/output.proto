@@ -9,4 +9,6 @@ option go_package = "github.com/jeffwecan/waypoint-plugin-nomad-traefik/release"
 // the output value from your ReleaseManager
 message Release {
   string id = 1;
+  string name = 2;
+  string url = 3;
 }
