@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
 	"github.com/jeffwecan/waypoint-plugin-nomad-traefik/platform"
 
+	"github.com/hashicorp/waypoint-plugin-sdk/component"
 	"github.com/hashicorp/nomad/api"
 )
 
@@ -121,16 +122,22 @@ func (rm *ReleaseManager) release(ctx context.Context, ui terminal.UI, target *p
 	}
 
 	evalID := regResult.EvalID
+	log.Debug("released job evalID", evalID)
 
-	// Wait on the allocation
-	u.Update(fmt.Sprintf("Monitoring evaluation %q", evalID))
+	u.Step(terminal.StatusOK, "Deployment successfully releaseddd!")
 
-	if err := newMonitor(u, client).monitor(evalID); err != nil {
-		return nil, err
-	}
-	u.Step(terminal.StatusOK, "Deployment successfully released!")
-
-	return &Release{
-		Url: "https://" + rm.config.Domain,
-	}, fmt.Errorf("nah")
+	// Create our deployment and set an initial ID
+	var result Release
+	result.Id = target.Id
+	result.Name = target.Name
+	result.Url = fmt.Sprintf("https://%s", rm.config.Domain)
+	return &result, nil
 }
+
+// URL is a URL.
+func (r *Release) URL() string { return r.Url }
+
+var (
+	_ component.ReleaseManager = (*ReleaseManager)(nil)
+	_ component.Configurable   = (*ReleaseManager)(nil)
+)
