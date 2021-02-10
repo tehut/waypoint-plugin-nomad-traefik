@@ -196,6 +196,7 @@ func (p *Platform) deploy(
 
 	// Determine if we have a job that we manage already
 	job, _, err := jobclient.Info(result.Name, &api.QueryOptions{})
+	// Set bool c = t/f  error == 'job not found', bombs out for any other error (e.g c == false )
 	if c := strings.Contains(err.Error(), "job not found"); c == false && err != nil {
 		return nil, err
 	}
